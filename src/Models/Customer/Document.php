@@ -60,16 +60,21 @@ class Document extends Model
                 $filePath = substr($fileFullPath, 1);
                 $fileName = explode('/', $fileFullPath);
                 $fileName = end($fileName);
-                if (Str::contains($fileHost, 's3-bild-sys.s3.amazonaws.com')) {
-                    return 'https://gc.bild.com.br/api/clienteAnexos/get?filename='.ltrim($fileFullPath, '/');
-                }
-                if (! Str::contains($fileHost, 'aws')) {
+
+                if (! Str::contains($fileHost, '.amazonaws.com')) {
                     return $value;
                 }
+
                 $disk = 's3_crm';
+
                 if (config('filesystems.disks.s3_crm_prod.key') && Str::contains($fileHost, 'pdaw-crmap01-assets.s3.amazonaws.com')) {
                     $disk = 's3_crm_prod';
                 }
+
+                if (config('filesystems.disks.s3_sys.key') && (Str::contains($fileHost, 's3-bild-sys.s3.amazonaws.com') || Str::contains($fileHost, 'sys-prod-app-bkp.s3'))) {
+                    $disk = 's3_sys';
+                }
+
                 $s3 = Storage::disk($disk);
                 $adapter = method_exists($s3->getDriver(), 'getAdapter') ? $s3->getAdapter() : $s3;
                 $client = $adapter->getClient();
