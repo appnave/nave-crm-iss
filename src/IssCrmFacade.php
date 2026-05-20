@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Facade;
 use RuntimeException;
 
 /**
- * @see \Bildvitta\IssCrm\IssCrm
+ * @see IssCrm
  */
 class IssCrmFacade extends Facade
 {
@@ -18,6 +18,6 @@ class IssCrmFacade extends Facade
      */
     protected static function getFacadeAccessor(): string
     {
-        return \Bildvitta\IssCrm\IssCrm::class;
+        return IssCrm::class;
     }
 }

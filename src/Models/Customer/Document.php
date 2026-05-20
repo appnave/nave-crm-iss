@@ -4,7 +4,6 @@ namespace Bildvitta\IssCrm\Models\Customer;
 
 use Bildvitta\IssCrm\Models\DocumentType;
 use Bildvitta\IssCrm\Traits\UsesCrmDB;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
@@ -48,7 +47,7 @@ class Document extends Model
 
     public function getFileAttribute($value)
     {
-        if (!filter_var($value, FILTER_VALIDATE_URL)) {
+        if (! filter_var($value, FILTER_VALIDATE_URL)) {
             return $value;
         }
 
@@ -60,7 +59,7 @@ class Document extends Model
         $fileName = explode('/', $fileFullPath);
         $fileName = end($fileName);
 
-        if (!Str::contains($fileHost, '.amazonaws.com')) {
+        if (! Str::contains($fileHost, '.amazonaws.com')) {
             return $value;
         }
 
@@ -78,7 +77,7 @@ class Document extends Model
             $filePath,
             now()->addDays(7),
             [
-                'ResponseContentDisposition' => 'inline; filename="' . $fileName . '"',
+                'ResponseContentDisposition' => 'inline; filename="'.$fileName.'"',
                 'ResponseContentType' => Storage::disk($disk)->mimeType($filePath),
             ]
         );
