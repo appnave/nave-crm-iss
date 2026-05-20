@@ -46,51 +46,41 @@ class Document extends Model
         return $this->belongsTo(Customer::class, 'customer_id', 'id')->withoutGlobalScopes()->withTrashed();
     }
 
-    protected function fileFormatted(): Attribute
+    public function getFileAttribute($value)
     {
-        return Attribute::make(
-            get: function ($value) {
-                $value = $this->file;
-                if (! filter_var($value, FILTER_VALIDATE_URL)) {
-                    return $value;
-                }
-                $fileUrl = parse_url($value);
-                $fileHost = $fileUrl['host'];
-                $fileFullPath = $fileUrl['path'];
-                $filePath = substr($fileFullPath, 1);
-                $fileName = explode('/', $fileFullPath);
-                $fileName = end($fileName);
+        if (!filter_var($value, FILTER_VALIDATE_URL)) {
+            return $value;
+        }
 
-                if (! Str::contains($fileHost, '.amazonaws.com')) {
-                    return $value;
-                }
+        $fileUrl = parse_url($value);
+        $fileHost = $fileUrl['host'];
+        $fileFullPath = $fileUrl['path'];
+        $filePath = substr($fileFullPath, 1);
 
-                $disk = 's3_crm';
+        $fileName = explode('/', $fileFullPath);
+        $fileName = end($fileName);
 
-                if (config('filesystems.disks.s3_crm_prod.key') && Str::contains($fileHost, 'pdaw-crmap01-assets.s3.amazonaws.com')) {
-                    $disk = 's3_crm_prod';
-                }
+        if (!Str::contains($fileHost, '.amazonaws.com')) {
+            return $value;
+        }
 
-                if (config('filesystems.disks.s3_sys.key') && (Str::contains($fileHost, 's3-bild-sys.s3.amazonaws.com') || Str::contains($fileHost, 'sys-prod-app-bkp.s3'))) {
-                    $disk = 's3_sys';
-                }
+        $disk = 's3';
 
-                $s3 = Storage::disk($disk);
-                $adapter = method_exists($s3->getDriver(), 'getAdapter') ? $s3->getAdapter() : $s3;
-                $client = $adapter->getClient();
-                $bucket = method_exists($adapter, 'getBucket') ? $adapter->getBucket() : $adapter->getConfig()['bucket'];
-                $expiry = '+7 days';
-                $command = $client->getCommand('GetObject', [
-                    'Bucket' => $bucket,
-                    'Key' => $filePath,
-                    'ContentType' => Storage::disk('s3')->mimeType($filePath),
-                    'ContentDisposition' => 'inline',
-                    'ResponseContentDisposition' => 'inline; filename="'.$fileName.'"',
-                ]);
-                $request = $client->createPresignedRequest($command, $expiry);
+        if (config('filesystems.disks.s3_crm.key') && Str::contains($fileHost, 'pdaw-crmap01-assets.s3.amazonaws.com')) {
+            $disk = 's3_crm';
+        }
 
-                return (string) $request->getUri();
-            }
+        if (config('filesystems.disks.s3_sys.key') && (Str::contains($fileHost, 's3-bild-sys.s3.amazonaws.com') || Str::contains($fileHost, 'sys-prod-app-bkp.s3'))) {
+            $disk = 's3_sys';
+        }
+
+        return Storage::disk($disk)->temporaryUrl(
+            $filePath,
+            now()->addDays(7),
+            [
+                'ResponseContentDisposition' => 'inline; filename="' . $fileName . '"',
+                'ResponseContentType' => Storage::disk($disk)->mimeType($filePath),
+            ]
         );
     }
 }
