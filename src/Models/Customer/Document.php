@@ -73,6 +73,10 @@ class Document extends Model
             $disk = 's3_sys';
         }
 
+        if (config('filesystems.disks.s3_credito.key') && (Str::contains($fileHost, 'sys-prod-feli.s3.amazonaws.com') || Str::contains($fileHost, 'credito-assets-prod01.s3.amazonaws.com'))) {
+            $disk = 's3_credito';
+        }
+
         return Storage::disk($disk)->temporaryUrl(
             $filePath,
             now()->addDays(7),
