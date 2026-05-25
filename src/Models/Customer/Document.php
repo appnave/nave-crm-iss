@@ -47,8 +47,6 @@ class Document extends Model
 
     public function getFileAttribute($value)
     {
-        $value = 'https://pdaw-crmap01-assets.s3.amazonaws.com/uploads/customersDocuments/a8231dcc-945c-47a2-888e-6d02312ea442.pdf';
-
         if (! filter_var($value, FILTER_VALIDATE_URL)) {
             return $value;
         }
