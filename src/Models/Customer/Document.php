@@ -77,13 +77,15 @@ class Document extends Model
             $disk = 's3_credito';
         }
 
+        $options['ResponseContentDisposition'] = 'inline; filename="'.$fileName.'"';
+        if ($contentType = Storage::disk($disk)->mimeType($filePath)) {
+            $options['ResponseContentType'] = 'application/octet-stream';
+        }
+
         return Storage::disk($disk)->temporaryUrl(
             $filePath,
             now()->addDays(7),
-            [
-                'ResponseContentDisposition' => 'inline; filename="'.$fileName.'"',
-                'ResponseContentType' => Storage::disk($disk)->mimeType($filePath),
-            ]
+            $options
         );
     }
 }
