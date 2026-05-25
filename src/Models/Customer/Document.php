@@ -4,7 +4,6 @@ namespace Bildvitta\IssCrm\Models\Customer;
 
 use Bildvitta\IssCrm\Models\DocumentType;
 use Bildvitta\IssCrm\Traits\UsesCrmDB;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
@@ -46,46 +45,45 @@ class Document extends Model
         return $this->belongsTo(Customer::class, 'customer_id', 'id')->withoutGlobalScopes()->withTrashed();
     }
 
-    protected function fileFormatted(): Attribute
+    public function getFileAttribute($value)
     {
-        return Attribute::make(
-            get: function ($value) {
-                $value = $this->file;
-                if (! filter_var($value, FILTER_VALIDATE_URL)) {
-                    return $value;
-                }
-                $fileUrl = parse_url($value);
-                $fileHost = $fileUrl['host'];
-                $fileFullPath = $fileUrl['path'];
-                $filePath = substr($fileFullPath, 1);
-                $fileName = explode('/', $fileFullPath);
-                $fileName = end($fileName);
-                if (Str::contains($fileHost, 's3-bild-sys.s3.amazonaws.com')) {
-                    return 'https://gc.bild.com.br/api/clienteAnexos/get?filename='.ltrim($fileFullPath, '/');
-                }
-                if (! Str::contains($fileHost, 'aws')) {
-                    return $value;
-                }
-                $disk = 's3_crm';
-                if (config('filesystems.disks.s3_crm_prod.key') && Str::contains($fileHost, 'pdaw-crmap01-assets.s3.amazonaws.com')) {
-                    $disk = 's3_crm_prod';
-                }
-                $s3 = Storage::disk($disk);
-                $adapter = method_exists($s3->getDriver(), 'getAdapter') ? $s3->getAdapter() : $s3;
-                $client = $adapter->getClient();
-                $bucket = method_exists($adapter, 'getBucket') ? $adapter->getBucket() : $adapter->getConfig()['bucket'];
-                $expiry = '+7 days';
-                $command = $client->getCommand('GetObject', [
-                    'Bucket' => $bucket,
-                    'Key' => $filePath,
-                    'ContentType' => Storage::disk('s3')->mimeType($filePath),
-                    'ContentDisposition' => 'inline',
-                    'ResponseContentDisposition' => 'inline; filename="'.$fileName.'"',
-                ]);
-                $request = $client->createPresignedRequest($command, $expiry);
+        if (! filter_var($value, FILTER_VALIDATE_URL)) {
+            return $value;
+        }
 
-                return (string) $request->getUri();
-            }
+        $fileUrl = parse_url($value);
+        $fileHost = $fileUrl['host'];
+        $fileFullPath = $fileUrl['path'];
+        $filePath = substr($fileFullPath, 1);
+
+        $fileName = explode('/', $fileFullPath);
+        $fileName = end($fileName);
+
+        if (! Str::contains($fileHost, '.amazonaws.com')) {
+            return $value;
+        }
+
+        $disk = 's3';
+
+        if (config('filesystems.disks.s3_crm.key') && Str::contains($fileHost, 'pdaw-crmap01-assets.s3.amazonaws.com')) {
+            $disk = 's3_crm';
+        }
+
+        if (config('filesystems.disks.s3_sys.key') && (Str::contains($fileHost, 's3-bild-sys.s3.amazonaws.com') || Str::contains($fileHost, 'sys-prod-app-bkp.s3'))) {
+            $disk = 's3_sys';
+        }
+
+        if (config('filesystems.disks.s3_credito.key') && (Str::contains($fileHost, 'sys-prod-feli.s3.amazonaws.com') || Str::contains($fileHost, 'credito-assets-prod01.s3.amazonaws.com'))) {
+            $disk = 's3_credito';
+        }
+
+        return Storage::disk($disk)->temporaryUrl(
+            $filePath,
+            now()->addDays(7),
+            [
+                'ResponseContentDisposition' => 'inline; filename="'.$fileName.'"',
+                'ResponseContentType' => Storage::disk($disk)->mimeType($filePath),
+            ]
         );
     }
 }
