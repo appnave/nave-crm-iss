@@ -47,6 +47,8 @@ class Document extends Model
 
     public function getFileAttribute($value)
     {
+        $value = 'https://pdaw-crmap01-assets.s3.amazonaws.com/uploads/customersDocuments/a8231dcc-945c-47a2-888e-6d02312ea442.pdf';
+
         if (! filter_var($value, FILTER_VALIDATE_URL)) {
             return $value;
         }
@@ -77,13 +79,15 @@ class Document extends Model
             $disk = 's3_credito';
         }
 
+        $options['ResponseContentDisposition'] = 'inline; filename="'.$fileName.'"';
+        if ($contentType = Storage::disk($disk)->mimeType($filePath)) {
+            $options['ResponseContentType'] = 'application/octet-stream';
+        }
+
         return Storage::disk($disk)->temporaryUrl(
             $filePath,
             now()->addDays(7),
-            [
-                'ResponseContentDisposition' => 'inline; filename="'.$fileName.'"',
-                'ResponseContentType' => Storage::disk($disk)->mimeType($filePath),
-            ]
+            $options
         );
     }
 }
