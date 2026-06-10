@@ -1,101 +1,121 @@
-# This is my package IssCrm
+# nave-crm-iss
 
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/bildvitta/iss-crm.svg?style=flat-square)](https://packagist.org/packages/bildvitta/iss-crm)
-[![GitHub Code Style Action Status](https://img.shields.io/github/workflow/status/bildvitta/iss-crm/Check%20&%20fix%20styling?label=code%20style)](https://github.com/bildvitta/iss-crm/actions?query=workflow%3A"Check+%26+fix+styling"+branch%3Amain)
-[![Total Downloads](https://img.shields.io/packagist/dt/bildvitta/iss-crm.svg?style=flat-square)](https://packagist.org/packages/bildvitta/iss-crm)
+Pacote Laravel privado para integração com o CRM da Nave. Ele é consumido pelos projetos clientes via Composer usando repositório VCS.
 
-This is where your description should go. Limit it to a paragraph or two. Consider adding a small example.
+## Requisitos
 
-## Support us
+- PHP 8.0 ou superior
+- Laravel 8, 9, 10, 11 ou 12
+- Acesso ao repositório privado no GitHub
+- Token GitHub com permissão de leitura no repositório
 
-- Customers (paginate, find).
+## Acesso a Repositórios Privados
 
-## Installation
+No projeto cliente, adicione o repositório VCS em `composer.json`:
 
-You can install the package via composer:
-
-```bash
-composer require bildvitta/iss-crm
+```json
+{
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "https://github.com/appnave/nave-crm-iss"
+    }
+  ]
+}
 ```
 
-You can publish the config file with:
+Instale o pacote:
+
+```bash
+composer require appnave/nave-crm-iss
+```
+
+Autenticação local do Composer com token do GitHub:
+
+```bash
+composer config -g github-oauth.github.com <YOUR_TOKEN>
+```
+
+GitHub Actions:
+
+```yaml
+env:
+  COMPOSER_AUTH: >-
+    {"github-oauth":{"github.com":"${{ secrets.COMPOSER_GITHUB_TOKEN }}"}}
+```
+
+## Instalação Local
+
+Publique a configuração do pacote:
+
 ```bash
 php artisan vendor:publish --provider="Bildvitta\IssCrm\IssCrmServiceProvider" --tag="iss-crm-config"
 ```
 
-This is the contents of the published config file:
+Configure as variáveis de ambiente no projeto cliente:
 
-```php
-return [
-
-    'base_uri' => env('MS_CRM_BASE_URI', 'https://api.almobi.com.br'),
-
-    'prefix' => env('MS_CRM_API_PREFIX', '/api')
-];
-
-```
-
-## Config
-
-In your .env file, associate the following variables.
-
-````dotenv
-# API base URL.
-MS_CRM_BASE_URI="http://127.0.0.1:8001"
-
-# API prefix if it exists.
+```dotenv
+MS_CRM_BASE_URI="https://crm-server.nave.dev.br"
 MS_CRM_API_PREFIX="/api"
-````
+MS_HUB_FRONT_URI="https://crm.nave.dev.br"
 
-## Usage
-
-```php
-$issCrm = new \Bildvitta\IssCrm('jwt-hub');
-
-$issCrm->customers()->search();
-print_r($issCrm->customer()->find('uuid'));
+MS_CRM_DB_URL=
+MS_CRM_DB_HOST=
+MS_CRM_DB_PORT=
+MS_CRM_DB_DATABASE=
+MS_CRM_DB_USERNAME=
+MS_CRM_DB_PASSWORD=
 ```
 
-This is result:
+Use `MS_CRM_DB_*` quando o projeto cliente precisar dos modelos e consultas que acessam o banco do CRM.
 
-`````json
-{
-    "result": {
-        "uuid": "effe4b02-f2eb-4ee0-9dbc-0d94ed30e532",
-        "name": "Dr. Elias Artur Ferminiano",
-        "phone": "(51) 90172-3741",
-        "phone2": null,
-        "email": "daniella52@example.org",
-        "document": "683.387.679-72",
-        "birthday": "1983-01-23",
-        "...": "..."
-    }
-}
-`````
+## Uso Básico
 
-## Testing
+O pacote registra o singleton `crm` no container. Em geral, ele usa o Bearer token da requisição atual.
+
+```php
+use Bildvitta\IssCrm\IssCrm;
+
+$crm = app('crm');
+$customer = $crm->customers()->find($uuid);
+$customers = $crm->customers()->search(['page' => 1]);
+$showUrl = $crm->customers()->getShowUrl($uuid);
+```
+
+Se precisar passar o token manualmente:
+
+```php
+use Bildvitta\IssCrm\IssCrm;
+
+$crm = new IssCrm($token);
+```
+
+Recursos programáticos disponíveis:
+
+```php
+$crm->programmatic()->customers()->searchByCompany($companyId)->search();
+$crm->programmatic()->customers()->documents()->search($customerUuid);
+$crm->programmatic()->customers()->facts()->create($customerUuid, $payload);
+$crm->programmatic()->creditProcesses()->store($payload);
+```
+
+## Comandos Úteis
 
 ```bash
 composer test
+composer psalm
+composer check-style
+composer fix-style
 ```
 
-## Changelog
+## Informações Adicionais
 
-Please see [CHANGELOG](CHANGELOG.md) for more information on what has changed recently.
-
-## Contributing
-
-Please see [CONTRIBUTING](.github/CONTRIBUTING.md) for details.
-
-## Security Vulnerabilities
-
-Please review [our security policy](../../security/policy) on how to report security vulnerabilities.
-
-## Credits
-
-- [BILD\jean.garcia](https://github.com/SOSTheBlack)
-- [All Contributors](../../contributors)
-
-## License
-
-The MIT License (MIT). Please see [License File](LICENSE.md) for more information.
+- Nome do pacote: `appnave/nave-crm-iss`
+- Namespace principal: `Bildvitta\IssCrm`
+- Service provider: `Bildvitta\IssCrm\IssCrmServiceProvider`
+- Tag de configuração: `iss-crm-config`
+- Arquivo de configuração: `config/iss-crm.php`
+- Changelog: `CHANGELOG.md`
+- Contribuição: `.github/CONTRIBUTING.md`
+- Segurança: `.github/SECURITY.md`
+- Licença: MIT

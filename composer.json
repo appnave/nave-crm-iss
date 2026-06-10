@@ -1,18 +1,18 @@
 {
-    "name": "bildvitta/iss-crm",
+    "name": "appnave/nave-crm-iss",
     "description": "This is my package IssCrm",
     "keywords": [
         "bildvitta",
         "laravel",
         "iss-crm"
     ],
-    "homepage": "https://github.com/bildvitta/iss-crm",
+    "homepage": "https://github.com/appnave/nave-crm-iss",
     "license": "MIT",
     "authors": [
         {
-            "name": "BILDjean.garcia",
-            "email": "jean.garcia@bild.com.br",
-            "role": "Developer"
+            "name": "App Nave",
+            "email": "contato@nave.app.br",
+            "role": "Owner"
         }
     ],
     "require": {
